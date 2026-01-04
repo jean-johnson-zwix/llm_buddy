@@ -1,0 +1,7 @@
+google-generativeai
+groq
+mlflow
+streamlit
+pandas
+sqlalchemy
+python-dotenv

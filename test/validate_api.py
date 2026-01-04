@@ -8,10 +8,10 @@ load_dotenv()
 TEST_PROMPT = "Classify the current LLM models based on their performance in coding, reasoning, summarization, rag?"
 
 def test_gemini():
-    print("\nTesting Gemini 2.5 Flash")
+    print("\nTesting Gemini 2.0 Flash")
     try:
         genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(TEST_PROMPT)
         print(f"Gemini SUCCESS: {response.text.strip()}")
         return True

@@ -1,3 +1,4 @@
 .env
 groq.json
 __pycache__/
+data/

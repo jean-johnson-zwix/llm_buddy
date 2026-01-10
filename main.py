@@ -5,6 +5,8 @@ from runner import run_all_models, MODELS
 from scorer import score_response
 from storage import initialize_db, save_run_metadata, save_result
 from datetime import datetime, timezone
+from mlflow_client import add_to_mlflow
+
 
 
 def run_benchmark(mode: str = "dev"):
@@ -61,6 +63,7 @@ def run_benchmark(mode: str = "dev"):
                 model_result=model_result,
                 score_result=score_result
             )
+            add_to_mlflow(run_id, mode, prompt, model_result, score_result)
 
             agg = score_result.get("aggregate_score")
             print(f"{display}: aggregate score = {agg}")

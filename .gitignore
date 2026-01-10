@@ -2,3 +2,4 @@
 groq.json
 __pycache__/
 data/
+mlruns/

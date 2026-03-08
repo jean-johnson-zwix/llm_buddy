@@ -2,26 +2,38 @@
 
 LLM Buddy helps you find the best LLM for your usecase.
 
-An automated pipeline that evaluates multiple LLMs across tasks using LLM-as-a-judge scoring, MLflow experiment tracking, and BigQuery storage — with a live Streamlit leaderboard tracking model performance over time.
+An automated pipeline that evaluates multiple LLMs across task dimensions using 
+LLM-as-a-judge scoring, MLflow experiment tracking, and BigQuery storage — with 
+a live Streamlit leaderboard tracking model performance over time.
 
 ## Tech Stack
-- **Languages:** Python 3.11
-- **LLM APIs:** Google Gemini, Groq
-- **Experiment Tracking:** MLflow
-- **Storage:** SQLite (local), GCP BigQuery
-- **Dashboard:** Streamlit
-- **Deployment:** GCP Cloud Run, Docker
-- **Scheduler:** GitHub Actions
+| Layer | Technology |
+|---|---|
+| Language | Python 3.11 |
+| LLM APIs | Google Gemini, Groq |
+| Experiment Tracking | MLflow |
+| Local Storage | SQLite |
+| Cloud Storage | GCP BigQuery |
+| Dashboard | Streamlit |
+| Containerization | Docker |
+| Container Registry | GCP Artifact Registry |
+| Deployment | GCP Cloud Run |
+| Scheduler | GitHub Actions (weekly cron) |
+| GCP Auth | Workload Identity Federation (keyless) |
+
+**Live Dashboard:** https://llm-benchmarker-dashboard-738128790851.us-central1.run.app
+
+## Architecture Diagram
+
+![architecture diagram](media/image.png)
 
 ## Models Evaluated
-| Model | Provider |
-|---|---|
-| Gemini 2.5 Flash | Google AI Studio |
-| LLaMA 4 Scout (17B) | Groq |
-| LLaMA 3.1 8B | Groq |
-
-## Judge Model
-**LLaMA 4 Maverick (17B)** via Groq
+| Model | Provider | Role |
+|---|---|---|
+| Gemini 2.5 Flash | Google AI Studio | Candidate |
+| LLaMA 4 Scout (17B) | Groq | Candidate |
+| LLaMA 3.1 8B Instant | Groq | Candidate |
+| LLaMA 4 Maverick (17B) | Groq | Judge |
 
 ## Task Categories
 | Category |  What it tests |
@@ -50,10 +62,10 @@ pip install -r requirements.txt
 ### 2. Configure environment
 ```bash
 # .env
-GEMINI_API_KEY=
-GROQ_API_KEY=
-GCP_PROJECT_ID=
-BQ_DATASET=
+GEMINI_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_key
+GCP_PROJECT_ID=your_proj_id
+BQ_DATASET=your_dataset
 ```
 
 ### 3. Run benchmark

@@ -4,7 +4,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import streamlit as st
 import pandas as pd
-from storage import fetch_leaderboard, fetch_results_by_category, fetch_all_results
 
 st.set_page_config(
     page_title="LLM Benchmarker",
@@ -17,21 +16,78 @@ st.caption("Evaluating Gemini 2.5 Flash x LLaMA 4 Scout x LLaMA 3.1 8B on Coding
 
 st.divider()
 
-leaderboard = fetch_leaderboard()
-by_category = fetch_results_by_category()
-all_results = fetch_all_results()
+import streamlit as st
+import pandas as pd
+import os
+from dotenv import load_dotenv
 
-if not leaderboard:
-    st.warning("No benchmark data yet")
+load_dotenv()
+
+def load_data_from_bq():
+    from google.cloud import bigquery
+    project = os.getenv("GCP_PROJECT_ID")
+    dataset = os.getenv("BQ_DATASET")
+    client = bigquery.Client(project=project)
+
+    leaderboard_query = f"""
+        SELECT
+            display_name, model_id,
+            ROUND(AVG(aggregate_score), 2) as avg_score,
+            ROUND(AVG(score_accuracy), 2) as avg_accuracy,
+            ROUND(AVG(score_clarity), 2) as avg_clarity,
+            ROUND(AVG(score_completeness), 2) as avg_completeness,
+            ROUND(AVG(latency_seconds), 3) as avg_latency,
+            COUNT(*) as total_evaluations
+        FROM `{project}.{dataset}.results`
+        WHERE aggregate_score IS NOT NULL
+        GROUP BY model_id, display_name
+        ORDER BY avg_score DESC
+    """
+
+    category_query = f"""
+        SELECT
+            display_name, category,
+            ROUND(AVG(aggregate_score), 2) as avg_score,
+            COUNT(*) as total
+        FROM `{project}.{dataset}.results`
+        WHERE aggregate_score IS NOT NULL
+        GROUP BY model_id, display_name, category
+        ORDER BY category, avg_score DESC
+    """
+
+    all_query = f"""
+        SELECT * FROM `{project}.{dataset}.results`
+        ORDER BY run_timestamp DESC
+    """
+
+    return (
+        client.query(leaderboard_query).to_dataframe(),
+        client.query(category_query).to_dataframe(),
+        client.query(all_query).to_dataframe()
+    )
+
+
+def load_data_from_sqlite():
+    from storage import fetch_leaderboard, fetch_results_by_category, fetch_all_results
+    return (
+        pd.DataFrame(fetch_leaderboard()),
+        pd.DataFrame(fetch_results_by_category()),
+        pd.DataFrame(fetch_all_results())
+    )
+
+
+USE_BQ = os.getenv("GCP_PROJECT_ID") is not None and os.getenv("STREAMLIT_CLOUD") == "true"
+
+try:
+    if USE_BQ:
+        df_leaderboard, df_category, df_all = load_data_from_bq()
+    else:
+        df_leaderboard, df_category, df_all = load_data_from_sqlite()
+except Exception as e:
+    st.error(f"Failed to load data: {e}")
     st.stop()
 
-df_leaderboard = pd.DataFrame(leaderboard)
-df_category = pd.DataFrame(by_category)
-df_all = pd.DataFrame(all_results)
-
-# ─────────────────────────────────────────
 # SECTION 1: OVERALL LEADERBOARD
-# ─────────────────────────────────────────
 st.subheader("Overall Leaderboard")
 
 cols = st.columns(len(df_leaderboard))
@@ -46,9 +102,7 @@ for i, row in df_leaderboard.iterrows():
 
 st.divider()
 
-# ─────────────────────────────────────────
 # SECTION 2: SCORE BREAKDOWN TABLE
-# ─────────────────────────────────────────
 st.subheader("Score Breakdown by Dimension")
 
 display_cols = {
@@ -70,9 +124,7 @@ st.dataframe(
 
 st.divider()
 
-# ─────────────────────────────────────────
 # SECTION 3: PERFORMANCE BY CATEGORY
-# ─────────────────────────────────────────
 st.subheader("Performance by Task Category")
 
 if not df_category.empty:
@@ -89,9 +141,7 @@ if not df_category.empty:
 
 st.divider()
 
-# ─────────────────────────────────────────
 # SECTION 4: LATENCY vs QUALITY
-# ─────────────────────────────────────────
 st.subheader("Quality vs Latency")
 if not df_leaderboard.empty:
     import altair as alt

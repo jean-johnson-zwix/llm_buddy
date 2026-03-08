@@ -8,3 +8,4 @@ test_gemini.py
 *.pyc
 mlflow.db
 *.db
+credentials.json

@@ -8,6 +8,9 @@ on:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write 
 
     steps:
       - name: Checkout repository
@@ -21,10 +24,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Authenticate to GCP
+      - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          workload_identity_provider: "projects/738128790851/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+          service_account: "llm-benchmarker-sa@llmbuddy-489602.iam.gserviceaccount.com"
 
       - name: Run benchmark
         env:

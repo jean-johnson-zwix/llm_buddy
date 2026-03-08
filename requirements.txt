@@ -1,5 +1,6 @@
 google-genai
 google-cloud-bigquery
+db-dtypes
 groq
 mlflow
 streamlit

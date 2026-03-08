@@ -23,69 +23,58 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def load_data_from_bq():
-    from google.cloud import bigquery
-    project = os.getenv("GCP_PROJECT_ID")
-    dataset = os.getenv("BQ_DATASET")
-    client = bigquery.Client(project=project)
+# LOAD THE DATA
+IS_CLOUD = os.getenv("K_SERVICE") is not None
 
-    leaderboard_query = f"""
-        SELECT
-            display_name, model_id,
-            ROUND(AVG(aggregate_score), 2) as avg_score,
-            ROUND(AVG(score_accuracy), 2) as avg_accuracy,
-            ROUND(AVG(score_clarity), 2) as avg_clarity,
-            ROUND(AVG(score_completeness), 2) as avg_completeness,
-            ROUND(AVG(latency_seconds), 3) as avg_latency,
-            COUNT(*) as total_evaluations
-        FROM `{project}.{dataset}.results`
-        WHERE aggregate_score IS NOT NULL
-        GROUP BY model_id, display_name
-        ORDER BY avg_score DESC
-    """
+def load_data():
+    if IS_CLOUD:
+        from google.cloud import bigquery
+        project = os.getenv("GCP_PROJECT_ID")
+        dataset = os.getenv("BQ_DATASET")
+        client = bigquery.Client(project=project)
 
-    category_query = f"""
-        SELECT
-            display_name, category,
-            ROUND(AVG(aggregate_score), 2) as avg_score,
-            COUNT(*) as total
-        FROM `{project}.{dataset}.results`
-        WHERE aggregate_score IS NOT NULL
-        GROUP BY model_id, display_name, category
-        ORDER BY category, avg_score DESC
-    """
+        leaderboard = client.query(f"""
+            SELECT
+                display_name, model_id,
+                ROUND(AVG(aggregate_score), 2) as avg_score,
+                ROUND(AVG(score_accuracy), 2) as avg_accuracy,
+                ROUND(AVG(score_clarity), 2) as avg_clarity,
+                ROUND(AVG(score_completeness), 2) as avg_completeness,
+                ROUND(AVG(latency_seconds), 3) as avg_latency,
+                COUNT(*) as total_evaluations
+            FROM `{project}.{dataset}.results`
+            WHERE aggregate_score IS NOT NULL
+            GROUP BY model_id, display_name
+            ORDER BY avg_score DESC
+        """).to_dataframe()
 
-    all_query = f"""
-        SELECT * FROM `{project}.{dataset}.results`
-        ORDER BY run_timestamp DESC
-    """
+        by_category = client.query(f"""
+            SELECT
+                display_name, category,
+                ROUND(AVG(aggregate_score), 2) as avg_score,
+                COUNT(*) as total
+            FROM `{project}.{dataset}.results`
+            WHERE aggregate_score IS NOT NULL
+            GROUP BY model_id, display_name, category
+            ORDER BY category, avg_score DESC
+        """).to_dataframe()
 
-    return (
-        client.query(leaderboard_query).to_dataframe(),
-        client.query(category_query).to_dataframe(),
-        client.query(all_query).to_dataframe()
-    )
+        all_results = client.query(f"""
+            SELECT * FROM `{project}.{dataset}.results`
+            ORDER BY run_timestamp DESC
+            LIMIT 500
+        """).to_dataframe()
 
-
-def load_data_from_sqlite():
-    from storage import fetch_leaderboard, fetch_results_by_category, fetch_all_results
-    return (
-        pd.DataFrame(fetch_leaderboard()),
-        pd.DataFrame(fetch_results_by_category()),
-        pd.DataFrame(fetch_all_results())
-    )
-
-
-USE_BQ = os.getenv("GCP_PROJECT_ID") is not None and os.getenv("STREAMLIT_CLOUD") == "true"
-
-try:
-    if USE_BQ:
-        df_leaderboard, df_category, df_all = load_data_from_bq()
+        return leaderboard, by_category, all_results
     else:
-        df_leaderboard, df_category, df_all = load_data_from_sqlite()
-except Exception as e:
-    st.error(f"Failed to load data: {e}")
-    st.stop()
+        from storage import fetch_leaderboard, fetch_results_by_category, fetch_all_results
+        return (
+            pd.DataFrame(fetch_leaderboard()),
+            pd.DataFrame(fetch_results_by_category()),
+            pd.DataFrame(fetch_all_results())
+        )
+
+df_leaderboard, df_category, df_all = load_data()
 
 # SECTION 1: OVERALL LEADERBOARD
 st.subheader("Overall Leaderboard")

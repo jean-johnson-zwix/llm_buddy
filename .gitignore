@@ -9,3 +9,4 @@ test_gemini.py
 mlflow.db
 *.db
 credentials.json
+.streamlit/secrets.toml

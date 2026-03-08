@@ -39,7 +39,7 @@ jobs:
         run: python main.py dev
 
       - name: Upload MLflow results as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mlflow-results-${{ github.run_id }}
           path: mlflow.db

@@ -1,0 +1,42 @@
+name: Weekly LLM Benchmark
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9AM UTC
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Run benchmark
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          BQ_DATASET: ${{ secrets.BQ_DATASET }}
+        run: python main.py dev
+
+      - name: Upload MLflow results as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-results-${{ github.run_id }}
+          path: mlflow.db
+          retention-days: 30

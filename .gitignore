@@ -3,3 +3,8 @@ groq.json
 __pycache__/
 data/
 mlruns/
+test.py
+test_gemini.py
+*.pyc
+mlflow.db
+*.db

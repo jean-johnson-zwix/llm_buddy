@@ -33,7 +33,7 @@ a live Streamlit leaderboard tracking model performance over time.
 | Gemini 2.5 Flash | Google AI Studio | Candidate |
 | LLaMA 4 Scout (17B) | Groq | Candidate |
 | LLaMA 3.1 8B Instant | Groq | Candidate |
-| LLaMA 4 Maverick (17B) | Groq | Judge |
+| Kimi K2 Instruct (Moonshot AI) (17B) | Groq | Judge |
 
 ## Task Categories
 | Category |  What it tests |

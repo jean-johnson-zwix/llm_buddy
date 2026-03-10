@@ -8,7 +8,7 @@ from groq import Groq
 load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-JUDGE_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+JUDGE_MODEL = "moonshotai/kimi-k2-instruct"
 
 SCORING_DIMENSIONS = {
     "accuracy":    "Is the response factually correct and does it fully answer the question?",
